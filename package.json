@@ -86,7 +86,7 @@
       "default": "./lib/bson.cjs"
     },
     "react-native": "./lib/bson.rn.cjs",
-    "browser": "./lib/bson.mjs"
+    "browser": "./lib/bson.no-tla.mjs"
   },
   "compass:exports": {
     "import": "./lib/bson.cjs",
