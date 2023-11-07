@@ -14,7 +14,7 @@
     "vendor"
   ],
   "types": "bson.d.ts",
-  "version": "6.2.0-no-tla.1",
+  "version": "6.2.0-no-tla.2",
   "author": {
     "name": "The MongoDB NodeJS Team",
     "email": "dbx-node@mongodb.com"
@@ -78,6 +78,7 @@
   "main": "./lib/bson.cjs",
   "module": "./lib/bson.mjs",
   "exports": {
+    "browser": "./lib/bson.no-tla.mjs",
     "import": {
       "types": "./bson.d.ts",
       "default": "./lib/bson.mjs"
@@ -86,8 +87,7 @@
       "types": "./bson.d.ts",
       "default": "./lib/bson.cjs"
     },
-    "react-native": "./lib/bson.rn.cjs",
-    "browser": "./lib/bson.no-tla.mjs"
+    "react-native": "./lib/bson.rn.cjs"
   },
   "compass:exports": {
     "import": "./lib/bson.cjs",
