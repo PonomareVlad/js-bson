@@ -2,6 +2,77 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [6.7.0](https://github.com/mongodb/js-bson/compare/v6.6.0...v6.7.0) (2024-05-01)
+
+
+### Features
+
+* **NODE-5648:** add Long.fromStringStrict() ([#675](https://github.com/mongodb/js-bson/issues/675)) ([9d5a5df](https://github.com/mongodb/js-bson/commit/9d5a5dfe59aa6f46e4d5d844564b065bdd037154))
+* **NODE-6086:** add Double.fromString() method ([#671](https://github.com/mongodb/js-bson/issues/671)) ([e943cdb](https://github.com/mongodb/js-bson/commit/e943cdb2bc69413dc2b57855c7780d6ab65dc366))
+* **NODE-6087:** add Int32.fromString method ([#670](https://github.com/mongodb/js-bson/issues/670)) ([5a21889](https://github.com/mongodb/js-bson/commit/5a2188961b87d006eaf64a3e7062fd2f108fd1bc))
+
+
+### Bug Fixes
+
+* **NODE-6102:** Double.fromString prohibiting '+' character and prohibiting exponential notation ([#674](https://github.com/mongodb/js-bson/issues/674)) ([c58d1e2](https://github.com/mongodb/js-bson/commit/c58d1e213714c99bbb09d0f91a3c9199e43710dd))
+* **NODE-6123:** utf8 validation is insufficiently strict ([#676](https://github.com/mongodb/js-bson/issues/676)) ([ae8bac7](https://github.com/mongodb/js-bson/commit/ae8bac7cf0653c87a06b61ac97ff02caf78707a2))
+* **NODE-6144:** Long.fromString incorrectly coerces valid inputs to Long.ZERO in special cases ([#677](https://github.com/mongodb/js-bson/issues/677)) ([208f7e8](https://github.com/mongodb/js-bson/commit/208f7e82740d7f5cdbdafcd4fe1e1eae2cd463ca))
+
+## [6.6.0](https://github.com/mongodb/js-bson/compare/v6.5.0...v6.6.0) (2024-04-01)
+
+
+### Features
+
+* **NODE-5958:** add BSON iterating API ([#656](https://github.com/mongodb/js-bson/issues/656)) ([269df91](https://github.com/mongodb/js-bson/commit/269df91f9d17831cc2010d0ed7641841be36d221))
+* **NODE-5959:** make byte parsing utils available on onDemand library ([#662](https://github.com/mongodb/js-bson/issues/662)) ([efab49a](https://github.com/mongodb/js-bson/commit/efab49af8081f33e30878f4e48b3733c62457593))
+
+
+### Bug Fixes
+
+* **NODE-6042:** Binary.toString output with respect to position ([#663](https://github.com/mongodb/js-bson/issues/663)) ([d7898f9](https://github.com/mongodb/js-bson/commit/d7898f9907d389e5bb40d5b52664a1ff341b49b5))
+* **NODE-6059:** clean up experimental APIs ([#665](https://github.com/mongodb/js-bson/issues/665)) ([3289184](https://github.com/mongodb/js-bson/commit/3289184ea6d42ccd67fc450393dc7594e9250418))
+
+## [6.5.0](https://github.com/mongodb/js-bson/compare/v6.4.0...v6.5.0) (2024-03-12)
+
+
+### Features
+
+* **NODE-5506:** add Binary subtype sensitive ([#657](https://github.com/mongodb/js-bson/issues/657)) ([748ca60](https://github.com/mongodb/js-bson/commit/748ca6073c44c778f6a3f872ce009566b6e8601f))
+* **NODE-5957:** add BSON indexing API ([#654](https://github.com/mongodb/js-bson/issues/654)) ([2ac17ec](https://github.com/mongodb/js-bson/commit/2ac17ec1e3c53b280efa298d137d96b2176bf046))
+
+
+### Bug Fixes
+
+* **NODE-6016:** flip byte order depending on system endianness ([#659](https://github.com/mongodb/js-bson/issues/659)) ([6a7ef5d](https://github.com/mongodb/js-bson/commit/6a7ef5da26b2f852711be23eb6dc84801d0a3ecf))
+
+## [6.4.0](https://github.com/mongodb/js-bson/compare/v6.3.0...v6.4.0) (2024-02-29)
+
+
+### Features
+
+* **NODE-5909:** optimize writing basic latin strings ([#645](https://github.com/mongodb/js-bson/issues/645)) ([ec51256](https://github.com/mongodb/js-bson/commit/ec512568c567fc83bc8f2a715664f81534609bb9))
+
+
+### Bug Fixes
+
+* **NODE-5873:** objectId symbol property not defined on instances from cross cjs and mjs ([#643](https://github.com/mongodb/js-bson/issues/643)) ([4d9884d](https://github.com/mongodb/js-bson/commit/4d9884d301d80d90040393c7d91ac3195c113a5c))
+
+
+### Performance Improvements
+
+* **NODE-5557:** move DataView and Set allocation used for double parsing and utf8 validation to nested path ([#611](https://github.com/mongodb/js-bson/issues/611)) ([9a150e1](https://github.com/mongodb/js-bson/commit/9a150e171a20b591b77f501518b74355a7db0cd3))
+* **NODE-5910:** optimize small byte copies ([#651](https://github.com/mongodb/js-bson/issues/651)) ([24d035e](https://github.com/mongodb/js-bson/commit/24d035eb31d942cfbc02bfa6fe242ccc576aad24))
+* **NODE-5934:** replace DataView uses with bit math ([#649](https://github.com/mongodb/js-bson/issues/649)) ([6d343ab](https://github.com/mongodb/js-bson/commit/6d343ab9141d7e0c577e3eb236d42364007f1925))
+* **NODE-5955:** use pooled memory when possible ([#653](https://github.com/mongodb/js-bson/issues/653)) ([78c4264](https://github.com/mongodb/js-bson/commit/78c426428f2ebab24d798238411a6e6b33a4b694))
+
+## [6.3.0](https://github.com/mongodb/js-bson/compare/v6.2.0...v6.3.0) (2024-01-31)
+
+
+### Features
+
+* **NODE-3034:** deprecate number as an input to ObjectId constructor ([#640](https://github.com/mongodb/js-bson/issues/640)) ([44bec19](https://github.com/mongodb/js-bson/commit/44bec1900b53bac9938c3f0b9dcf0f75eadcd95e))
+* **NODE-5861:** optimize parsing basic latin strings ([#642](https://github.com/mongodb/js-bson/issues/642)) ([cdb779b](https://github.com/mongodb/js-bson/commit/cdb779b3bab8192a830d141a010d3781d1ee8bae))
+
 ## [6.2.0](https://github.com/mongodb/js-bson/compare/v6.1.0...v6.2.0) (2023-10-16)
 
 

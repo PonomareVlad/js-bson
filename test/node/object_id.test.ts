@@ -3,7 +3,6 @@ import { BSON, BSONError, EJSON, ObjectId } from '../register-bson';
 import * as util from 'util';
 import { expect } from 'chai';
 import { bufferFromHexArray } from './tools/utils';
-import { getSymbolFrom } from './tools/utils';
 import { isBufferOrUint8Array } from './tools/utils';
 
 describe('ObjectId', function () {
@@ -376,7 +375,7 @@ describe('ObjectId', function () {
      */
     const oidString = '6b61666665656b6c61746368';
     const oid = new ObjectId(oidString);
-    const oidKId = getSymbolFrom(oid, 'id');
+    const oidKId = 'buffer';
     it('should return false for an undefined otherId', () => {
       // otherId === undefined || otherId === null
       expect(oid.equals(null)).to.be.false;
@@ -483,6 +482,45 @@ describe('ObjectId', function () {
     context('when called with an incorrect length string', () => {
       it('throws an error indicating the expected length of 16', () => {
         expect(() => ObjectId.createFromBase64('')).to.throw(/16/);
+      });
+    });
+  });
+
+  context('serializeInto()', () => {
+    it('writes oid bytes to input buffer', () => {
+      const oid = new ObjectId('61'.repeat(12));
+      const buffer = new Uint8Array(20);
+      // @ts-expect-error: internal method
+      oid.serializeInto(buffer, 0);
+      expect(buffer.subarray(0, 12)).to.deep.equal(Buffer.from('61'.repeat(12), 'hex'));
+    });
+
+    it('writes oid bytes to input buffer at offset', () => {
+      const oid = new ObjectId('61'.repeat(12));
+      const buffer = new Uint8Array(20);
+      // @ts-expect-error: internal method
+      oid.serializeInto(buffer, 5);
+      expect(buffer.subarray(5, 5 + 12)).to.deep.equal(Buffer.from('61'.repeat(12), 'hex'));
+    });
+
+    it('does not validate input types', () => {
+      const oid = new ObjectId('61'.repeat(12));
+      const object = {};
+      // @ts-expect-error: internal method
+      oid.serializeInto(object, 'b');
+      expect(object).to.deep.equal({
+        b: 0x61,
+        b1: 0x61,
+        b2: 0x61,
+        b3: 0x61,
+        b4: 0x61,
+        b5: 0x61,
+        b6: 0x61,
+        b7: 0x61,
+        b8: 0x61,
+        b9: 0x61,
+        b10: 0x61,
+        b11: 0x61
       });
     });
   });

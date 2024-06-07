@@ -64,6 +64,7 @@
     "@typescript-eslint/no-unsafe-return": "off",
     "@typescript-eslint/no-unsafe-argument": "off",
     "@typescript-eslint/no-unsafe-call": "off",
+    "@typescript-eslint/no-unsafe-enum-comparison": "off",
     "@typescript-eslint/consistent-type-imports": [
       "error",
       {
@@ -75,7 +76,8 @@
     "no-bigint-usage/no-bigint-literals": "error",
     "no-restricted-globals": [
       "error",
-      "BigInt"
+      "BigInt",
+      "DataView"
     ]
   },
   "overrides": [

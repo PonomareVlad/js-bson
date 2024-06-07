@@ -50,6 +50,16 @@ functions:
         args:
           - .evergreen/run-tests.sh
 
+  run big endian tests:
+    - command: subprocess.exec
+      type: test
+      params:
+        working_dir: src
+        add_expansions_to_env: true
+        binary: bash
+        args:
+          - .evergreen/run-big-endian-test.sh
+
   run checks:
     - command: subprocess.exec
       type: test
@@ -94,7 +104,7 @@ functions:
           PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
         args:
           - .evergreen/run-bundling-test.sh
-  run benchmarks:
+  run granular benchmarks:
     - command: subprocess.exec
       type: test
       params:
@@ -102,7 +112,16 @@ functions:
         binary: bash
         add_expansions_to_env: true
         args:
-          - .evergreen/run-benchmarks.sh
+          - .evergreen/run-granular-benchmarks.sh
+  run spec benchmarks:
+    - command: subprocess.exec
+      type: test
+      params:
+        working_dir: src
+        binary: bash
+        add_expansions_to_env: true
+        args:
+          - .evergreen/run-spec-benchmarks.sh
 tasks:
   - name: node-tests-v16
     tags: ["node"]
@@ -211,7 +230,7 @@ tasks:
         vars:
           TS_VERSION: "next"
           TRY_COMPILING_LIBRARY: "false"
-  - name: run-benchmarks-node-18
+  - name: run-granular-benchmarks-node-18
     commands:
       - func: fetch source
         vars:
@@ -220,12 +239,26 @@ tasks:
       - func: install dependencies
         vars:
           NPM_VERSION: 9
-      - func: run benchmarks
+      - func: run granular benchmarks
         vars:
-          WEB: false 
+          WARMUP: 1000
+          ITERATIONS: 1000
       - command: perf.send
         params:
-          file: src/benchmarks.json
+          file: src/test/bench/etc/resultsCollectedMeans.json
+  - name: run-spec-benchmarks-node-18
+    commands:
+      - func: fetch source
+        vars:
+          # This needs to stay pinned at Node v18.16.0 for consistency across perf runs.
+          NODE_LTS_VERSION: v18.16.0
+      - func: install dependencies
+        vars:
+          NPM_VERSION: 9
+      - func: run spec benchmarks
+      - command: perf.send
+        params:
+          file: src/bsonBench.json
   - name: check-eslint-plugin
     commands:
       - func: fetch source
@@ -233,12 +266,25 @@ tasks:
           NODE_LTS_VERSION: 20
       - func: install dependencies
       - func: run eslint plugin tests
+  - name: node-tests-big-endian
+    commands:
+      - func: fetch source
+        vars:
+          NODE_LTS_VERSION: 20
+      - func: install dependencies
+        vars:
+          NPM_OPTIONS: "--ignore-scripts"
+      - func: run big endian tests
 
 buildvariants:
   - name: linux
     display_name: RHEL 8.0
     run_on: rhel80-small
     tasks: [".node", ".web", "check-eslint-plugin"]
+  - name: linux-zseries
+    display_name: RHEL 8.3 zSeries
+    run_on: rhel83-zseries-small
+    tasks: ["node-tests-big-endian"]
   - name: lint
     display_name: lint
     run_on: rhel80-small
@@ -252,4 +298,5 @@ buildvariants:
     display_name: RHEL 9.0 perf
     run_on: rhel90-dbx-perf-large
     tasks:
-      - run-benchmarks-node-18
+      - run-granular-benchmarks-node-18
+      - run-spec-benchmarks-node-18

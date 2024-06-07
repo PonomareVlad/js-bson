@@ -14,10 +14,12 @@ const tsConfig = {
   module: 'esnext',
   moduleResolution: 'node',
   removeComments: true,
-  lib: ['es2021'],
+  lib: ['es2021', 'ES2022.Error'],
   importHelpers: false,
   noEmitHelpers: false,
   noEmitOnError: true,
+  // preserveConstEnums: false is the default, but we explicitly set it here to ensure we do not mistakenly generate objects where we expect literals
+  preserveConstEnums: false,
   // Generate separate source maps files with sourceContent included
   sourceMap: true,
   inlineSourceMap: false,

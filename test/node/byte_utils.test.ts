@@ -8,6 +8,7 @@ import { webByteUtils } from '../../src/utils/web_byte_utils';
 import * as sinon from 'sinon';
 import { loadCJSModuleBSON, loadReactNativeCJSModuleBSON, loadESModuleBSON } from '../load_bson';
 import * as crypto from 'node:crypto';
+import { utf8WebPlatformSpecTests } from './data/utf8_wpt_error_cases';
 
 type ByteUtilTest<K extends keyof ByteUtils> = {
   name: string;
@@ -365,42 +366,45 @@ const toISO88591Tests: ByteUtilTest<'toISO88591'>[] = [
     }
   }
 ];
-const fromUTF8Tests: ByteUtilTest<'fromUTF8'>[] = [
+const fromUTF8Tests: ByteUtilTest<'encodeUTF8Into'>[] = [
   {
-    name: 'should create buffer from utf8 input',
-    inputs: [Buffer.from('abc\u{1f913}', 'utf8').toString('utf8')],
+    name: 'should insert utf8 bytes into buffer',
+    inputs: [Buffer.alloc(7), 'abc\u{1f913}', 0],
     expectation({ output, error }) {
       expect(error).to.be.null;
-      expect(output).to.deep.equal(Buffer.from('abc\u{1f913}', 'utf8'));
+      expect(output).to.equal(7);
+      expect(this.inputs[0]).to.deep.equal(Buffer.from('abc\u{1f913}', 'utf8'));
     }
   },
   {
-    name: 'should return empty buffer for empty string input',
-    inputs: [''],
+    name: 'should return 0 and not modify input buffer',
+    inputs: [Uint8Array.from([2, 2]), '', 0],
     expectation({ output, error }) {
       expect(error).to.be.null;
-      expect(output).to.have.property('byteLength', 0);
+      expect(output).to.equal(0);
+      expect(this.inputs[0]).to.deep.equal(Uint8Array.from([2, 2]));
     }
   },
   {
-    name: 'should return bytes with replacement character if string is not encodable',
-    inputs: ['\u{1f913}'.slice(0, 1)],
+    name: 'should insert replacement character bytes if string is not encodable',
+    inputs: [Uint8Array.from({ length: 10 }, () => 2), '\u{1f913}'.slice(0, 1), 2],
     expectation({ output, error }) {
       expect(error).to.be.null;
-      expect(output).to.have.property('byteLength', 3);
-      expect(output).to.have.property('0', 0xef);
-      expect(output).to.have.property('1', 0xbf);
-      expect(output).to.have.property('2', 0xbd);
-      const backToString = Buffer.from(output!).toString('utf8');
+      expect(output).to.equal(3);
+      expect(this.inputs[0]).to.have.property('2', 0xef);
+      expect(this.inputs[0]).to.have.property('3', 0xbf);
+      expect(this.inputs[0]).to.have.property('4', 0xbd);
+      const backToString = Buffer.from(this.inputs[0].subarray(2, 5)).toString('utf8');
       const replacementCharacter = '\u{fffd}';
       expect(backToString).to.equal(replacementCharacter);
     }
   }
 ];
+
 const toUTF8Tests: ByteUtilTest<'toUTF8'>[] = [
   {
     name: 'should create utf8 string from buffer input',
-    inputs: [Buffer.from('abc\u{1f913}', 'utf8')],
+    inputs: [Buffer.from('abc\u{1f913}', 'utf8'), 0, 7, false],
     expectation({ output, error }) {
       expect(error).to.be.null;
       expect(output).to.deep.equal(Buffer.from('abc\u{1f913}', 'utf8').toString('utf8'));
@@ -408,13 +412,34 @@ const toUTF8Tests: ByteUtilTest<'toUTF8'>[] = [
   },
   {
     name: 'should return empty string for empty buffer input',
-    inputs: [Buffer.alloc(0)],
+    inputs: [Buffer.alloc(0), 0, 1, false],
     expectation({ output, error }) {
       expect(error).to.be.null;
       expect(output).to.be.a('string').with.lengthOf(0);
     }
-  }
+  },
+  {
+    name: 'should insert replacement character fatal is false and string is invalid',
+    inputs: [Buffer.from('616263f09fa4', 'hex'), 0, 7, false],
+    expectation({ error, output }) {
+      expect(error).to.not.exist;
+      expect(output).to.equal('abc\uFFFD');
+    }
+  },
+  ...utf8WebPlatformSpecTests.map(t => ({
+    name: t.name,
+    inputs: [Uint8Array.from(t.input), 0, t.input.length, true] as [
+      buffer: Uint8Array,
+      start: number,
+      end: number,
+      fatal: boolean
+    ],
+    expectation({ error }) {
+      expect(error).to.match(/Invalid UTF-8 string in BSON document/i);
+    }
+  }))
 ];
+
 const utf8ByteLengthTests: ByteUtilTest<'utf8ByteLength'>[] = [
   {
     name: 'should return zero for empty string',
@@ -492,7 +517,7 @@ const table = new Map<keyof ByteUtils, ByteUtilTest<keyof ByteUtils>[]>([
   ['toHex', toHexTests],
   ['fromISO88591', fromISO88591Tests],
   ['toISO88591', toISO88591Tests],
-  ['fromUTF8', fromUTF8Tests],
+  ['encodeUTF8Into', fromUTF8Tests],
   ['toUTF8', toUTF8Tests],
   ['utf8ByteLength', utf8ByteLengthTests],
   ['randomBytes', randomBytesTests]
@@ -592,6 +617,29 @@ describe('ByteUtils', () => {
         const result = webByteUtils.toLocalBufferType(input);
         expect(types.isUint8Array(result), 'expected a Uint8Array instance').to.be.true;
         expect(objectProtoToStringSpy).to.be.calledOnce;
+      });
+    });
+  });
+
+  describe('toUTF8 basic latin optimization', () => {
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    context('Given a basic latin string', () => {
+      it('should not invoke Buffer.toString', () => {
+        const buffer = Buffer.from('abcdef', 'utf8');
+        const spy = sinon.spy(buffer, 'toString');
+        nodeJsByteUtils.toUTF8(buffer, 0, 6, false);
+        expect(spy).to.not.have.been.called;
+      });
+
+      it('should not invoke TextDecoder.decode', () => {
+        const utf8Bytes = Buffer.from('abcdef', 'utf8');
+        const buffer = new Uint8Array(utf8Bytes.buffer, utf8Bytes.byteOffset, utf8Bytes.byteLength);
+        const spy = sinon.spy(TextDecoder.prototype, 'decode');
+        webByteUtils.toUTF8(buffer, 0, 6, false);
+        expect(spy).to.not.have.been.called;
       });
     });
   });
