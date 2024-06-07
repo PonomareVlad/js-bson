@@ -3,6 +3,15 @@ import { BSON, Double } from '../register-bson';
 
 import { BSON_DATA_NUMBER, BSON_DATA_INT } from '../../src/constants';
 import { inspect } from 'node:util';
+import { bufferFromHexArray } from './tools/utils';
+
+const FLOAT = new Float64Array(1);
+const FLOAT_BYTES = new Uint8Array(FLOAT.buffer, 0, 8);
+
+FLOAT[0] = -1;
+// Little endian [0, 0, 0, 0, 0, 0,  240, 191]
+// Big endian    [191, 240, 0, 0, 0, 0, 0, 0]
+const isBigEndian = FLOAT_BYTES[7] === 0;
 
 describe('BSON Double Precision', function () {
   context('class Double', function () {
@@ -216,6 +225,68 @@ describe('BSON Double Precision', function () {
         });
       });
     });
+
+    describe('fromString', () => {
+      const acceptedInputs = [
+        ['zero', '0', 0],
+        ['non-leading zeros', '45000000', 45000000],
+        ['zero with leading zeros', '000000.0000', 0],
+        ['positive leading zeros', '000000867.1', 867.1],
+        ['negative leading zeros', '-00007.980', -7.98],
+        ['positive integer with decimal', '2.0', 2],
+        ['zero with decimal', '0.0', 0.0],
+        ['Infinity', 'Infinity', Infinity],
+        ['-Infinity', '-Infinity', -Infinity],
+        ['NaN', 'NaN', NaN],
+        ['basic floating point', '-4.556000', -4.556],
+        ['negative zero', '-0', -0],
+        ['explicit plus zero', '+0', 0],
+        ['explicit plus decimal', '+78.23456', 78.23456],
+        ['explicit plus leading zeros', '+00000000000001.11', 1.11],
+        ['exponentiation notation', '1.34e16', 1.34e16],
+        ['exponentiation notation with negative exponent', '1.34e-16', 1.34e-16],
+        ['exponentiation notation with explicit positive exponent', '1.34e+16', 1.34e16],
+        ['exponentiation notation with negative base', '-1.34e16', -1.34e16],
+        ['exponentiation notation with capital E', '-1.34E16', -1.34e16]
+      ];
+
+      const errorInputs = [
+        ['commas', '34,450', 'is not representable as a Double'],
+        ['octal', '0o1', 'is not in decimal or exponential notation'],
+        ['binary', '0b1', 'is not in decimal or exponential notation'],
+        ['hex', '0x1', 'is not in decimal or exponential notation'],
+        ['empty string', '', 'is an empty string'],
+        ['leading and trailing whitespace', '    89   ', 'contains whitespace'],
+        ['fake positive infinity', '2e308', 'is not representable as a Double'],
+        ['fake negative infinity', '-2e308', 'is not representable as a Double'],
+        ['fraction', '3/4', 'is not representable as a Double'],
+        ['foo', 'foo', 'is not representable as a Double'],
+        [
+          'malformed number without invalid characters',
+          '9.0.+76',
+          'is not representable as a Double'
+        ]
+      ];
+
+      for (const [testName, value, expectedDouble] of acceptedInputs) {
+        context(`when the input is ${testName}`, () => {
+          it(`should successfully return a Double representation`, () => {
+            if (value === 'NaN') {
+              expect(isNaN(Double.fromString(value))).to.be.true;
+            } else {
+              expect(Double.fromString(value).value).to.deep.equal(expectedDouble);
+            }
+          });
+        });
+      }
+      for (const [testName, value, expectedErrMsg] of errorInputs) {
+        context(`when the input is ${testName}`, () => {
+          it(`should throw an error containing '${expectedErrMsg}'`, () => {
+            expect(() => Double.fromString(value)).to.throw(BSON.BSONError, expectedErrMsg);
+          });
+        });
+      }
+    });
   });
 
   function serializeThenDeserialize(value) {
@@ -295,6 +366,24 @@ describe('BSON Double Precision', function () {
         const result = BSON.EJSON.parse(`{ "a": -0.0 }`, { relaxed: true });
         expect(Object.is(result.a, -0), 'expected prop a to be negative zero').to.be.true;
       });
+    });
+  });
+
+  context(`handles ${isBigEndian ? 'big' : 'little'} endianness correctly`, () => {
+    const bsonWithFloat = bufferFromHexArray([
+      '01', // double
+      '6100', // 'a'
+      '00'.repeat(6) + 'f0bf' // 8 byte LE float equal to -1
+    ]);
+
+    it('deserialize should return -1', () => {
+      const res = BSON.deserialize(bsonWithFloat);
+      expect(res).to.have.property('a', -1);
+    });
+
+    it('serialize should set bytes to -1 in little endian format', () => {
+      const res = BSON.serialize({ a: new Double(-1) });
+      expect(res).to.deep.equal(bsonWithFloat);
     });
   });
 });
