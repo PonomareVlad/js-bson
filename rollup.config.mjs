@@ -1,6 +1,7 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 import { RequireRewriter } from './etc/rollup/rollup-plugin-require-rewriter/require_rewriter.mjs';
+import { RequireRemover } from './etc/rollup/rollup-plugin-require-remover/require_remover.mjs';
 import { RequireVendor } from './etc/rollup/rollup-plugin-require-vendor/require_vendor.mjs';
 
 /** @type {typescript.RollupTypescriptOptions} */
@@ -58,6 +59,15 @@ const config = [
     plugins: [typescript(tsConfig), new RequireRewriter(), nodeResolve({ resolveOnly: [] })],
     output: {
       file: 'lib/bson.mjs',
+      format: 'esm',
+      sourcemap: true
+    }
+  },
+  {
+    input,
+    plugins: [typescript(tsConfig), new RequireRemover(), nodeResolve({ resolveOnly: [] })],
+    output: {
+      file: 'lib/bson.no-tla.mjs',
       format: 'esm',
       sourcemap: true
     }
